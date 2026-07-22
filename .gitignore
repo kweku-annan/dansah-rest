@@ -57,3 +57,10 @@ target
 
 /static_cdn
 *.env
+
+# IDE files
+.idea/*
+idea
+
+# Virtural environment
+.venv/
