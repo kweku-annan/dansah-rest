@@ -64,3 +64,6 @@ idea
 
 # Virtural environment
 .venv/
+
+# Django secret key
+secret_key.txt
