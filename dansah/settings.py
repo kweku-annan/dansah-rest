@@ -14,29 +14,40 @@ from pathlib import Path
 import environ
 
 env = environ.Env()
-# environ.Env.read_env()
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
-# Take environment variables from .env file
-environ.Env.read_env(os.path.join(BASE_DIR, "dev.env"))
-print("USING " + env("ENVIROMENT") + " SETTINGS")
-IS_DEV = env("ENVIROMENT") == "DEV"
+# Load dev.env only when running locally (Railway provides env vars directly)
+_env_file = os.path.join(BASE_DIR, "dev.env")
+if os.path.exists(_env_file):
+    environ.Env.read_env(_env_file)
+_environment = os.environ.get("ENVIROMENT", "DEV")
+print("USING " + _environment + " SETTINGS")
+IS_DEV = _environment == "DEV"
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-
-with open(os.path.join(BASE_DIR, "secret_key.txt")) as f:
-    SECRET_KEY = f.read().strip()
+# Read from SECRET_KEY env var (Railway), fallback to secret_key.txt (local dev)
+SECRET_KEY = os.environ.get("SECRET_KEY")
+if not SECRET_KEY:
+    _key_file = os.path.join(BASE_DIR, "secret_key.txt")
+    if os.path.exists(_key_file):
+        with open(_key_file) as f:
+            SECRET_KEY = f.read().strip()
+    else:
+        raise ValueError("SECRET_KEY environment variable is not set and secret_key.txt not found.")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = env("ENABLE_DEBUG") == "True"
+# Set ENABLE_DEBUG=False in Railway environment variables
+DEBUG = os.environ.get("ENABLE_DEBUG", "False") == "True"
 if IS_DEV:
     ALLOWED_HOSTS = ["localhost"]
 else:
-    ALLOWED_HOSTS = [env("ALLOWED_HOST"), "localhost"]
-    CSRF_TRUSTED_ORIGINS = [env("CSRF_TRUSTED_ORIGIN")]
+    ALLOWED_HOSTS = [os.environ.get("ALLOWED_HOST", "*"), "localhost"]
+    _csrf_origin = os.environ.get("CSRF_TRUSTED_ORIGIN")
+    if _csrf_origin:
+        CSRF_TRUSTED_ORIGINS = [_csrf_origin]
 
 
 # Application definition
@@ -79,15 +90,17 @@ MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",
 ]
 
+# Frontend URL — set FRONTEND_URL env var in Railway dashboard to your Cloudflare Pages domain
+_frontend_url = os.environ.get("FRONTEND_URL", "http://localhost:4200")
 CORS_ORIGIN_WHITELIST = (
     "http://localhost:4200",
-    "https://dansah-rest-production.up.railway.app",
+    _frontend_url,
 )
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:4200",
-    "https://dansah-rest-production.up.railway.app",
+    _frontend_url,
 ]
-CORS_ALLOW_ALL = False
+CORS_ALLOW_CREDENTIALS = True
 
 ROOT_URLCONF = "dansah.urls"
 
@@ -177,20 +190,21 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 MEDIA_ROOT = os.path.join(os.path.dirname(BASE_DIR), "static_cdn", "media_root")
 
-# if not IS_DEV:
-AWS_ACCESS_KEY_ID = env("AWS_ACCESS_KEY_ID")
-AWS_SECRET_ACCESS_KEY = env("AWS_SECRET_ACCESS_KEY")
-AWS_STORAGE_BUCKET_NAME = env("AWS_STORAGE_BUCKET_NAME")
-AWS_S3_REGION_NAME = env("AWS_S3_REGION_NAME")
+# AWS S3 — set these in Railway environment variables
+AWS_ACCESS_KEY_ID = os.environ.get("AWS_ACCESS_KEY_ID")
+AWS_SECRET_ACCESS_KEY = os.environ.get("AWS_SECRET_ACCESS_KEY")
+AWS_STORAGE_BUCKET_NAME = os.environ.get("AWS_STORAGE_BUCKET_NAME")
+AWS_S3_REGION_NAME = os.environ.get("AWS_S3_REGION_NAME")
 AWS_S3_SIGNATURE_NAME = ("s3v4",)
 AWS_S3_FILE_OVERWRITE = False
 AWS_DEFAULT_ACL = None
-AWS_S3_VERITY = True
+AWS_S3_VERIFY = True
 AWS_QUERYSTRING_AUTH = False
 DEFAULT_FILE_STORAGE = "storages.backends.s3boto3.S3Boto3Storage"
 
 
-SESSION_COOKIE_SECURE = False
-CSRF_COOKIE_SECURE = False
-SECURE_SSL_REDIRECT = False
+# Cookie / HTTPS security — Railway serves over HTTPS in production
+SESSION_COOKIE_SECURE = not IS_DEV
+CSRF_COOKIE_SECURE = not IS_DEV
+SECURE_SSL_REDIRECT = False   # Railway handles TLS termination upstream
 SECURE_HSTS_SECONDS = 0

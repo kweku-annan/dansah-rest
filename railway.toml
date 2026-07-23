@@ -1,0 +1,8 @@
+[build]
+builder = "NIXPACKS"
+
+[deploy]
+startCommand = "python manage.py migrate && gunicorn dansah.wsgi --log-file -"
+healthcheckPath = "/api/"
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 3
