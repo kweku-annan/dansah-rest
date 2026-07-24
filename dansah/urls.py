@@ -35,6 +35,7 @@ def health_check(request):
 
 urlpatterns = [
     path("api/", api_root),
+    path("api/health/", health_check),
     path("health/", health_check),
     path("admin/", admin.site.urls),
     path("api/homeslider/", include("homeslider.urls")),

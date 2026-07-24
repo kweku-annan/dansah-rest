@@ -16,13 +16,13 @@ import environ
 env = environ.Env()
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
-# Load dev.env only when running locally (Railway provides env vars directly)
+# Load dev.env only for local development; Railway injects its own environment.
+_is_railway = bool(os.environ.get("RAILWAY_ENVIRONMENT") or os.environ.get("RAILWAY_PROJECT_ID"))
 _env_file = os.path.join(BASE_DIR, "dev.env")
-if os.path.exists(_env_file):
+if not _is_railway and os.path.exists(_env_file):
     environ.Env.read_env(_env_file)
-_environment = os.environ.get("ENVIROMENT", "DEV")
-print("USING " + _environment + " SETTINGS")
-IS_DEV = _environment == "DEV"
+
+IS_DEV = not _is_railway
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
@@ -39,10 +39,10 @@ if not SECRET_KEY:
         raise ValueError("SECRET_KEY environment variable is not set and secret_key.txt not found.")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-# Set ENABLE_DEBUG=False in Railway environment variables
-DEBUG = os.environ.get("ENABLE_DEBUG", "False") == "True"
+# Set ENABLE_DEBUG=True only for local development.
+DEBUG = IS_DEV and os.environ.get("ENABLE_DEBUG", "False") == "True"
 if IS_DEV:
-    ALLOWED_HOSTS = ["localhost"]
+    ALLOWED_HOSTS = ["localhost", "127.0.0.1", "[::1]"]
 else:
     ALLOWED_HOSTS = [os.environ.get("ALLOWED_HOST", "*"), "localhost"]
     _csrf_origin = os.environ.get("CSRF_TRUSTED_ORIGIN")
@@ -125,7 +125,12 @@ WSGI_APPLICATION = "dansah.wsgi.application"
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
-if IS_DEV:
+_has_railway_postgres = all(
+    os.environ.get(key)
+    for key in ("PGDATABASE", "PGUSER", "PGPASSWORD", "PGHOST", "PGPORT")
+)
+
+if IS_DEV or not _has_railway_postgres:
     DATABASES = {
         "default": {
             "ENGINE": "django.db.backends.sqlite3",
@@ -180,7 +185,8 @@ CORS_ORIGIN_ALLOW_ALL = True
 STATIC_URL = "/static/"
 # Extra places for collectstatic to find static files.
 STATIC_ROOT = os.path.join(BASE_DIR, "static")
-STATICFILES_DIRS = ("admin", os.path.join(BASE_DIR, "static", "admin"))
+_admin_static_dir = os.path.join(BASE_DIR, "static", "admin")
+STATICFILES_DIRS = (_admin_static_dir,) if os.path.isdir(_admin_static_dir) else ()
 
 MEDIA_URL = "/media/"
 # Default primary key field type
