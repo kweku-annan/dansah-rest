@@ -26,7 +26,7 @@ class StudentView(generics.GenericAPIView):
             return None
 
     def post(self, request):
-        if len(request.data) is 0:
+        if not request.data:
             return Response(
                 {
                     "status": "fail",
