@@ -25,10 +25,16 @@ admin.site.site_header = "Dansah Admin"
 admin.site.index_title = "Dansah  App"
 
 
+def api_root(request):
+    """Lightweight API root for healthchecks. Returns 200 JSON."""
+    return JsonResponse({"status": "ok", "service": "dansah API"}, status=200)
+
+
 def health_check(request):
     return JsonResponse({"status": "ok"}, status=200)
 
 urlpatterns = [
+    path("api/", api_root),
     path("health/", health_check),
     path("admin/", admin.site.urls),
     path("api/homeslider/", include("homeslider.urls")),
