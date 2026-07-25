@@ -192,8 +192,13 @@ CORS_ORIGIN_ALLOW_ALL = True
 STATIC_URL = "/static/"
 # Extra places for collectstatic to find static files.
 STATIC_ROOT = os.path.join(BASE_DIR, "static")
+# Only include admin static files if the directory exists
+# This prevents staticfiles.W004 warnings in production when the admin dir hasn't been collected yet
 _admin_static_dir = os.path.join(BASE_DIR, "static", "admin")
-STATICFILES_DIRS = (_admin_static_dir,) if os.path.isdir(_admin_static_dir) else ()
+if os.path.isdir(_admin_static_dir):
+    STATICFILES_DIRS = (_admin_static_dir,)
+else:
+    STATICFILES_DIRS = ()
 
 MEDIA_URL = "/media/"
 # Default primary key field type

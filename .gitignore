@@ -67,3 +67,9 @@ idea
 
 # Django secret key
 secret_key.txt
+
+# Agent files
+check_python_issues.py
+DEPLOYMENT_RESOLUTION.md
+FIXES_SUMMARY.md
+.flake8
