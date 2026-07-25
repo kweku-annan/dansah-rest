@@ -130,6 +130,13 @@ _has_railway_postgres = all(
     for key in ("PGDATABASE", "PGUSER", "PGPASSWORD", "PGHOST", "PGPORT")
 )
 
+print("PGDATABASE:", os.environ.get("PGDATABASE"))
+print("PGUSER:", os.environ.get("PGUSER"))
+print("PGPASSWORD:", os.environ.get("PGPASSWORD"))
+print("PGHOST:", os.environ.get("PGHOST"))
+print("PGPORT:", os.environ.get("PGPORT"))
+print("_has_railway_postgres:", _has_railway_postgres)
+
 if IS_DEV or not _has_railway_postgres:
     DATABASES = {
         "default": {
