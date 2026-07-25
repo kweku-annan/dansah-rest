@@ -19,14 +19,18 @@ from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import path, include
 from django.http import JsonResponse
+import logging
 
 admin.site.site_header = "Dansah Admin"
 # Add the below line
 admin.site.index_title = "Dansah  App"
 
+logger = logging.getLogger(__name__)
+
 
 def api_root(request):
     """Lightweight API root for healthchecks. Returns 200 JSON."""
+    logger.info("Health check endpoint hit")
     return JsonResponse({"status": "ok", "service": "dansah API"}, status=200)
 
 
